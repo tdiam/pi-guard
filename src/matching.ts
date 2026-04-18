@@ -9,8 +9,27 @@ import type { Action } from "./types.ts";
 export function isSubsequence(needle: string[], haystack: string[]): boolean {
 	let ni = 0;
 	for (let hi = 0; hi < haystack.length && ni < needle.length; hi++) {
-		if (haystack[hi] === needle[ni]) ni++;
+		// Match exact token
+		if (haystack[hi] === needle[ni]) {
+			ni++;
+			continue;
+		}
+
+		if (needle[ni] === "**") {
+			if (ni === needle.length - 1) {
+				return true;
+			}
+
+			if (haystack[hi] === needle[ni + 1]) {
+				ni += 2;
+			}
+
+			continue;
+		}
+
+		return false;
 	}
+
 	return ni === needle.length;
 }
 

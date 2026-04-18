@@ -29,8 +29,15 @@ test("isSubsequence", async (t) => {
 			isSubsequence(["git", "status"], ["git", "status", "--short"]),
 			true,
 		);
+	});
+
+	await t.test("matches when needles appear in order with **", () => {
 		assert.equal(
-			isSubsequence(["git", "status"], ["git", "-v", "status"]),
+			isSubsequence(["git", "**", "status"], ["git", "status"]),
+			true,
+		);
+		assert.equal(
+			isSubsequence(["git", "**", "status"], ["git", "-v", "status"]),
 			true,
 		);
 	});
@@ -40,6 +47,10 @@ test("isSubsequence", async (t) => {
 	});
 
 	await t.test("does not match when needle is missing", () => {
+		assert.equal(
+			isSubsequence(["git", "status"], ["git", "-v", "status"]),
+			false,
+		);
 		assert.equal(isSubsequence(["git", "push"], ["git", "status"]), false);
 	});
 
@@ -131,7 +142,7 @@ test("resolveBashAction", async (t) => {
 	await t.test("allows subcommand with extra flags interspersed", () => {
 		assert.equal(
 			resolveBashAction("git", ["branch", "-v", "--show-current"], {
-				"git branch --show-current": "allow",
+				"git branch ** --show-current": "allow",
 			}),
 			"allow",
 		);
@@ -244,7 +255,7 @@ test("resolveBashAction", async (t) => {
 	});
 
 	await t.test("allows dangerous command only with required flag", () => {
-		const rules = { "terraform apply --dry-run": "allow" as const };
+		const rules = { "terraform apply ** --dry-run": "allow" as const };
 		assert.equal(
 			resolveBashAction("terraform", ["apply", "--dry-run"], rules),
 			"allow",
