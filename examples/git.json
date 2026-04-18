@@ -1,0 +1,9 @@
+{
+  "git blame": "allow",
+  "git branch --show-current": "allow",
+  "git diff": "allow",
+  "git log": "allow",
+  "git rev-parse": "allow",
+  "git show": "allow",
+  "git status": "allow"
+}
