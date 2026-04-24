@@ -14,7 +14,7 @@ import {
 	buildCustomApprovalPrompt,
 	buildFileApprovalPrompt,
 } from "./prompt.ts";
-import { getCommandArgs, getCommandName } from "./resolve.ts";
+import { getCommandName } from "./resolve.ts";
 import type { Action, CommandRef, ToolCallInput } from "./types.ts";
 
 export async function handleInteractiveApproval(
@@ -95,9 +95,7 @@ export async function handleBashTool(
 	const unauthorizedCommands: CommandRef[] = [];
 
 	for (const cmd of allCommands) {
-		const name = getCommandName(cmd);
-		const args = getCommandArgs(cmd);
-		const action = resolveBashAction(name, args, toolRules);
+		const action = resolveBashAction(cmd, toolRules);
 		if (action !== "allow") {
 			unauthorizedCommands.push(cmd);
 		}
@@ -109,9 +107,7 @@ export async function handleBashTool(
 		// Non-interactive: check first unauthorized command's action
 		// biome-ignore lint/style/noNonNullAssertion: guarded by length check above
 		const firstCmd = unauthorizedCommands[0]!;
-		const name = getCommandName(firstCmd);
-		const args = getCommandArgs(firstCmd);
-		const action = resolveBashAction(name, args, toolRules);
+		const action = resolveBashAction(firstCmd, toolRules);
 
 		if (action === "deny") {
 			return {
