@@ -1,5 +1,6 @@
 import { minimatch } from "minimatch";
-import type { Action } from "./types.ts";
+import { getCommandArgs, getCommandName } from "./resolve.ts";
+import type { Action, CommandRef } from "./types.ts";
 
 /**
  * Check if `needle` tokens appear in order within `haystack`.
@@ -50,11 +51,26 @@ export function globMatch(pattern: string, input: string): boolean {
  * Returns undefined if no rule matches.
  */
 export function resolveBashAction(
-	commandName: string,
-	commandArgs: string[],
+	cmd: CommandRef,
 	rules: Record<string, Action>,
 ): Action | undefined {
 	let result: Action | undefined;
+
+	// Check redirects
+	for (const redirect of cmd.node.redirects) {
+		if ([">&"].includes(redirect.operator)) {
+			continue;
+		}
+
+		if (["/dev/null"].includes(redirect.content ?? "")) {
+			continue;
+		}
+
+		return "ask";
+	}
+
+	const commandName = getCommandName(cmd);
+	const commandArgs = getCommandArgs(cmd);
 
 	for (const [pattern, action] of Object.entries(rules)) {
 		if (pattern === "*") {
