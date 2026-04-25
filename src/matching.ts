@@ -52,7 +52,7 @@ export function globMatch(pattern: string, input: string): boolean {
 		input = home + input.slice(1);
 	}
 
-	return minimatch(input, pattern);
+	return minimatch(input, pattern, { dot: true });
 }
 
 /**
