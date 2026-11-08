@@ -1,3 +1,4 @@
+import { toggleAutopilot } from "./autopilot.ts";
 import { DEFAULT_CONFIG, loadProjectConfig, saveConfig } from "./config.ts";
 import type { Action, GuardConfig, Rules } from "./types.ts";
 
@@ -195,8 +196,16 @@ export async function handleGuardCommand(
 		return { message: buildListOutput(context, cwd), type: "info" };
 	}
 
+	if (action === "autopilot") {
+		const enabled = toggleAutopilot();
+		return {
+			message: `Autopilot is now ${enabled ? "ON" : "OFF"}`,
+			type: "info",
+		};
+	}
+
 	return {
-		message: "Usage: /guard <toggle|enable|disable|profile|list>",
+		message: "Usage: /guard <toggle|enable|disable|profile|list|autopilot>",
 		type: "warning",
 	};
 }

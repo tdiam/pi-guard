@@ -3,6 +3,7 @@ import type {
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { type ParsedScript, parse as parseBash } from "unbash";
+import { AUTOPILOT_BLOCK_REASON, isAutopilotEnabled } from "./autopilot.ts";
 import { ApprovalDialog } from "./components/approval-dialog.ts";
 import { extractAllCommandsFromAST } from "./extract.ts";
 import {
@@ -202,6 +203,26 @@ export async function handleBashTool(
 		}
 	}
 
+	const hasDeniedCommand = unauthorizedCommands.some(
+		(cmd) =>
+			resolveBashAction(getCommandName(cmd), getCommandArgs(cmd), toolRules) ===
+			"deny",
+	);
+	const hasDeniedWrite = unauthorizedRedirects.some((cmd) =>
+		hasDeniedRedirect(cmd, writeRules, ctx.cwd),
+	);
+	if (isAutopilotEnabled() && (hasDeniedCommand || hasDeniedWrite)) {
+		return { block: true, reason: "[Blocked by pi-guard: Security policy]" };
+	}
+	if (
+		isAutopilotEnabled() &&
+		!hasDeniedCommand &&
+		!hasDeniedWrite &&
+		(unauthorizedCommands.length > 0 || unauthorizedRedirects.length > 0)
+	) {
+		return { block: true, reason: AUTOPILOT_BLOCK_REASON };
+	}
+
 	if (!ctx.hasUI) return handleNonInteractiveBash(unauthorized, toolRules);
 
 	return handleInteractiveBash(
@@ -224,6 +245,9 @@ async function handleBashParseFailure(
 	pi: ExtensionAPI,
 	ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> {
+	if (isAutopilotEnabled()) {
+		return { block: true, reason: AUTOPILOT_BLOCK_REASON };
+	}
 	if (!ctx.hasUI) {
 		return {
 			block: true,
@@ -583,6 +607,9 @@ async function handleToolApproval(
 	if (action === "deny") {
 		return { block: true, reason: "[Blocked by pi-guard: Security policy]" };
 	}
+	if (action === "ask" && isAutopilotEnabled()) {
+		return { block: true, reason: AUTOPILOT_BLOCK_REASON };
+	}
 	if (!ctx.hasUI) {
 		return {
 			block: true,
@@ -625,6 +652,7 @@ export async function handleGlobTool(
 		ctx,
 		sessionRules,
 		buildFileApprovalPromptData(tool, path),
+		undefined,
 	);
 }
 
@@ -644,5 +672,6 @@ export async function handleExactTool(
 		ctx,
 		sessionRules,
 		buildCustomApprovalPromptData(tool, input),
+		undefined,
 	);
 }

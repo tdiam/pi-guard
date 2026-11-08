@@ -2,6 +2,7 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import { AUTOPILOT_BLOCK_REASON, isAutopilotEnabled } from "./autopilot.ts";
 import type { GuardContext } from "./commands.ts";
 import { handleGuardCommand, parseGuardArgs } from "./commands.ts";
 import {
@@ -218,6 +219,9 @@ async function applyToolAction(
 ): Promise<{ block: true; reason: string } | undefined> {
 	if (action === "allow") return;
 	if (action === "deny") return block("Security policy");
+	if (action === "ask" && isAutopilotEnabled()) {
+		return { block: true, reason: AUTOPILOT_BLOCK_REASON };
+	}
 	if (!ctx.hasUI) return block("No interactive session available");
 	return handleInteractiveApproval(pi, tool, input, ctx, sessionRules, onSave);
 }
